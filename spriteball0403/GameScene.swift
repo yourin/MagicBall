@@ -175,6 +175,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
             
             //上にフリックした場合
             if y < -30 {
+                //MARK:プレイヤーボールを　上に投げる
                 //            if (_beganPoint.y - 30) < pos.y {
                 print("power = \(_power)")
                 print("上になげる")
@@ -183,7 +184,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
                 //普通になげる
             else  {
                 print("power = \(_power)")
-                //MARK:プレイヤーボールを投げる
+                //MARK:プレイヤーボールを　まっすぐ投げる
                 self.playerAction_BallThrow()
             }
             
@@ -571,7 +572,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         _enemy.nextAction()
         
         //今なにもしていないか　チェック
-        if _enemy.action == .STOP {
+//        if _enemy.action == .STOP {
             
             switch _enemy.action!{
             
@@ -591,10 +592,10 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
                 
             }
             
-        }else{
-            //何もしない
-            
-        }
+//        }else{
+//            //何もしない
+//            
+//        }
         
         
     }
@@ -603,6 +604,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     //MARK:敵の行動
     //MARK:ボールを投げる
     func enemyAction_BallThrow(){
+        print("ボールをなげる")
         let bp = makeBezierCurve3Points_Enemy(pos: _enemy.position)
         
         self.addControlLine1(point0: bp.stP, point1: bp.contP)
@@ -614,15 +616,25 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     }
     //MARK:ボールを上に投げる
     func enemyAction_BallThrow_Big(){
-    
+    print("ボールを上になげる")
+        
+        self._enemy.action = .STOP
+        
     }
     
     //MARK:左へ移動
     func enemyAction_MoveLeft(){
         print("左へ移動")
-        //どこへ移動するか　positionX
+        //どこへ移動するか　-画面の横幅/4 +画面の横幅/4
+        
+        //現在地から目的地まで
+        
+        
+        
         //今の位置と移動先の距離
+        
         //距離から移動時間を計算
+        
         //アクションを作成
         let action = SKAction.moveBy(x: 5, y: 0, duration: 0.5)
         
@@ -634,6 +646,13 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     //move Right
     func enemyAction_MoveRight(){
         print("右へ移動")
+        
+        let action = SKAction.moveBy(x: -5, y: 0, duration: 0.5)
+        
+        _enemy.run(action, completion: {
+            self._enemy.action = .STOP
+        })
+
     }
 
 //    func enemyAction_LeftMove(){
@@ -672,40 +691,42 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     }
     
     func playerAction_BallThrow_Big(){
-        
+        //上になげる
         
         let ball = makeBall_Player()
         ball.position = _player.position
+        //プレイヤーより奥に表示
         ball.zPosition = _player.zPosition - 0.01
         
-//        self.addChild(ball)
         
         // 火のエフェクトを追加
         let emitter = makeEmitter_Fire()
         emitter.setScale(CGFloat(_power))
-//        emitter.zRotation = .pi
         
         ball.addChild(emitter)
         self.addChild(ball)
-
-
         
-//        let bp = makeBezierCurve3Points_Player(pos: _player.position)
-        //ボールの降る位置
+        //ボールの上空　位置
         let pos_Aerial = CGPoint(x:_player.position.x / 2.0,y:(self.view?.frame.height)!)
         //ボールの落ちる位置
         let pos_Fall = CGPoint(x: pos_Aerial.x, y: _groundPosY_Enemy)
         let actionFall = SKAction.move(to: pos_Fall, duration: 0.5)
+        
         actionFall.timingMode = .easeIn
 
-        //ボールを上に移動
+        //アクション実行
         let action = SKAction.sequence([
-            
+            //上になげる（画面外へ消える）
             SKAction.moveTo(y: (self.view?.frame.size.height)!, duration: 0.5),
+            //１秒後
             SKAction.wait(forDuration: 1),
+            //スケールを半分に
             SKAction.scale(by: 0.5, duration: 0.0),
+            //敵上空に移動
             SKAction.move(to: pos_Aerial, duration: 0.0),
+            //落下
             actionFall,
+            //削除する
             SKAction.removeFromParent()
             ])
         
@@ -713,6 +734,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
           print("")
         })
         
+        //ボールの影
         let shadow = makeShadowNode(size: ball.frame.size, name: "")
         shadow.alpha = 0.0
         shadow.setScale(0.1)
@@ -727,28 +749,10 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
                 ]),
             SKAction.removeFromParent()
             ])
-        
+        shadowAction.timingMode = .easeIn
         shadow.run(shadowAction, completion: {
             
         })
-        
-
-        
-        
-        //ボールを降らせる
-        
-//        let bp = makeBezierCurve3Points_Player(pos: _player.position)
-//        
-//        self.addControlLine1(point0: bp.stP, point1: bp.contP)
-//        self.addControlLine2(point0: bp.endP, point1: bp.contP)
-//        
-//        //ベジェ曲線
-//        //        let shapeLine = self.makeShapeLine(bp: bp)
-//        //        self.addChild(shapeLine)
-//        //軌道計算
-//        let path = self.makePath_3points(bp:bp)
-//        
-//        self.addPlayerBall(path:path)
         
     }
 

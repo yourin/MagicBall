@@ -123,17 +123,17 @@ class MyCharaNode:SKSpriteNode {
             
             switch nextValue{
             case 0:
-                self.action = .STOP
-                print("STOPにセット")
+                self.stateStop()
             case 1,3,7,8:
-                self.action = .BallThrow
-                print("BallThrowにセット")
+                self.stateThrow()
             case 2,4:
-                self.action = .MoveToLeft
-                print("MoveLeftにセット")
+                self.stateMoveLeft()
+//                self.action = .MoveToLeft
+//                print("MoveLeftにセット")
             case 3,6:
-                self.action = .MoveToRight
-                print("MoveRightにセット")
+                self.stateMoveRight()
+//                self.action = .MoveToRight
+//                print("MoveRightにセット")
             default:
                 //self.action = .STOP
                 print("変更しない")
@@ -142,6 +142,29 @@ class MyCharaNode:SKSpriteNode {
         
         
     }
+    
+    func stateStop(){
+        self.action = .STOP
+        print("STOPにセット")
+ 
+    }
+    
+    func stateThrow(){
+        self.action = .BallThrow
+        print("BallThrowにセット")
+
+    }
+    
+    func stateMoveLeft(){
+        self.action = .MoveToLeft
+        print("MoveLeftにセット")
+
+    }
+    func stateMoveRight(){
+        self.action = .MoveToRight
+        print("MoveRightにセット")
+    }
+
     
 
 }
