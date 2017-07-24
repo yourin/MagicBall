@@ -1,35 +1,11 @@
-//
-//  GameScene.swift
-//  spriteball0403
-//
-//  Created by 井上義晴 on 2017/04/03.
-//  Copyright © 2017年 tone.youring. All rights reserved.
-//
-
 import UIKit
 import SpriteKit
 import GameplayKit
-
-//enum Direction:Int {
-//    case LEFT   = 0
-//    case DOWN   = 1
-//    case RIGHT  = 2
-//    case UP     = 3
-//    
-//}
-//
-//enum Action:Int {
-//    case Stop = 0
-//    case BallThrow = 1
-//    case MoveToLeft = 2
-//    case MoveToRight = 3
-//}
 
 enum Throw:Int {
     case Nomal = 0
     case Big = 1
 }
-
 
 enum MagicBallType:Int {
     case FIRE = 0
@@ -37,47 +13,61 @@ enum MagicBallType:Int {
     case SPARK = 2
 }
 
-enum NodeName:String {
-    case Player     = "player"
-    case Enemy      = "enemy"
-    case PlayerBall = "playerball"
-    
-    case EnemyBall  = "enemyball"
-    case Shadow     = "shadow"
-}
-
-
 class GameScene: SKScene,SKPhysicsContactDelegate {
+    
+    var _playerCharaNumber = 1
+    var _enemyCharaNumber = 2
     
     let _playerBallName                 = "playerball"
     let _enemyBallName                  = "enemyball"
+    let _playerUpperBallName            = "playerUpperball"
+    let _enemyUpperBallName             = "enemyUpperball"
+    
     let _playerName                     = "player"
     let _enemyName                      = "enemy"
     let _playerBallShadowName_A         = "playerballshadowA"
     let _enemyBallShadowName_A          = "enemyballshadowA"
     
-    let _playerBallShadowName_B         = "playerballshadowB"
-    let _enemyBallShadowNName_B         = "enemyballshadowB"
+//    let _playerBallShadowName_B         = "playerballshadowB"
+//    let _enemyBallShadowNName_B         = "enemyballshadowB"
     
+    let _playerGroundLineNmae           = "playergroundline"
+    let _enemyGroundLineName            = "enemygroundline"
+    
+    
+    let _playerGroundLineCategory:UInt32 = 0x01 << 10
+    let _enemyGroundLineCategory:UInt32 = 0x01 << 11
     
     let _playerCategory         :UInt32 = 0x01 << 1
-//    let _playerBallCategory     :UInt32 = 0x01 << 2
+    let _playerUpperBallCategory     :UInt32 = 0x01 << 2
 //    let _playerBallShadowCategory:UInt32 = 0x01 << 5
     
     let _enemyCategory          :UInt32 = 0x01 << 3
-//    let _enemyBallCategory      :UInt32 = 0x01 << 4
+    let _enemyUpperBallCategory      :UInt32 = 0x01 << 4
 //    let _enemyBallShadowCategory:UInt32 = 0x01 << 6
     
     
 //    let _playerRangeX = SKRange()
 //    let _enemyRangeX = SKRange()
     
+    
+    let _gaugeWidth:CGFloat = 10.0
+    let _gaugeHeight:CGFloat = 200.0
+
+    
     var _life_Player = 100
     var _life_Enemy  = 100
     
-    var _playerDummyball:MyShapeNode!
-    var _enemyDummyball:MyShapeNode!
+    var _lifeGauge_Player:SKSpriteNode!
+    var _magicGauge_Player:MYGauge!
+    // SKSpriteNode!
     
+//    var _magicGauge_Player:SKSpriteNode!
+    var _lifeGauge_Enemy:SKSpriteNode!
+    var _magicGauge_Enemy:MYGauge!
+
+//    var _playerDummyball:MyShapeNode!
+//    var _enemyDummyball:MyShapeNode!
     
     let _throwSec_Short = 1.0 //秒
     
@@ -88,17 +78,20 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     var _beganPoint:CGPoint!
     
     var _upDateCount_Touch = 0
+    var _upDateCount_Enemy = 0//敵のアップデートカウント
 
     var _ballCount = 1
     var _hasBallName  = ""
-    
+
+    //ボールの大きさ
     let _ary_BallRadius:[CGFloat] = [5.0,10.0,15.0,30.0]
     var _power = 0
+    var _power_Enemy = 0
     
     var _cgPath:CGPath? = nil
     
     var _b3p = MyBezierShape.Bezier3Points()
-    var _b4p = MyBezierShape.Bezier4Points()
+//    var _b4p = MyBezierShape.Bezier4Points()
     
     var _player:MyCharaNode!
     var _enemy:MyCharaNode!
@@ -111,6 +104,13 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     
     var _groundPosY_Player:CGFloat!
     var _groundPosY_Enemy:CGFloat!
+    
+    var _groundPosX_LeftSide_Player:CGFloat!//
+    var _groundPosX_RightSide_Player:CGFloat!//
+    
+    var _groundPosX_LeftSide_Enamey:CGFloat!//敵が移動可能な　左側の限界
+    var _groundPosX_RightSide_Enamey:CGFloat!//敵が移動可能な　右側の限界
+    
     
     
 /////////////////////////////////////////////////////////////////////////
@@ -158,7 +158,6 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
                 _beganPoint = pos
                 
             }
-            
         }
     }
     
@@ -176,12 +175,11 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
             //上にフリックした場合
             if y < -30 {
                 //MARK:プレイヤーボールを　上に投げる
-                //            if (_beganPoint.y - 30) < pos.y {
                 print("power = \(_power)")
                 print("上になげる")
                 self.playerAction_BallThrow_Big()
             }
-                //普通になげる
+                //MARK:普通になげる
             else  {
                 print("power = \(_power)")
                 //MARK:プレイヤーボールを　まっすぐ投げる
@@ -190,8 +188,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
             
         }
     }
-    
-    
+
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         self.touchON()
         for t in touches { self.touchDown(atPoint: t.location(in: self)) }
@@ -226,34 +223,48 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         _power = 0              //溜めた力を解放
         _cgPath = nil
         _hasBallName = ""
-
-
     }
     
+    
+    func ballCountFromNode(node:SKNode) ->String{
+        if node.name!.hasPrefix(_playerBallShadowName_A){
+            return node.name!.replacingOccurrences(of: _playerBallShadowName_A, with: "")
+            
+        }else if node.name!.hasPrefix(_enemyBallShadowName_A){
+            return node.name!.replacingOccurrences(of: _enemyBallShadowName_A, with: "")
+        }
+        print("！！！　ボールカウントは無い　　！！！")
+        return ""
+    }
+
+    
+//////////////////////////////////////////////////////////////////////////
+//MARK:- 衝突処理
 //////////////////////////////////////////////////////////////////////////
     
-//MARK:- 衝突処理
-    
     func didBegin(_ contact: SKPhysicsContact) {
+        
+        
+        print("___---   衝突   ---___")
         let bodyA = contact.bodyA
         let bodyB = contact.bodyB
         print(" body A = \(bodyA)")
         print(" body B = \(bodyB)")
         
         var nodeA:SKNode = SKNode()
+        var nodeB:SKNode = SKNode()
+
         if let a = bodyA.node {
             nodeA = a
-            
         }else{
-            print("ーーーA　衝突処理失敗　ーーー")
+            print("- A - represenetedObject:null 処理失敗")
             return
         }
 
-        var nodeB:SKNode = SKNode()
         if let b = bodyB.node {
             nodeB = b
         }else{
-            print("ーーーB　衝突処理失敗　ーーー")
+            print("- B - represenetedObject:null 処理失敗")
             return
         }
         
@@ -261,49 +272,30 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
 
 // function
         
-        func ballCountFromNode(node:SKNode) ->String{
-            if node.name!.hasPrefix(_playerBallShadowName_A){
-                return node.name!.replacingOccurrences(of: _playerBallShadowName_A, with: "")
+        //ボールカウントのみの文字列を取り出す
+        func ballCountFromNode(name:String) -> String{
+            if nodeA.name!.hasPrefix(name){
+                return nodeA.name!.replacingOccurrences(of: name, with: "")
                 
-            }else if node.name!.hasPrefix(_enemyBallShadowName_A){
-                return node.name!.replacingOccurrences(of: _enemyBallShadowName_A, with: "")
+            }else
+                if nodeB.name!.hasPrefix(name){
+                    return nodeB.name!.replacingOccurrences(of: name, with: "")
             }
-            
             print("！！！　ボールカウントは無い　　！！！")
             return ""
+ 
         }
-        
         
         //プレイヤーのボールカウントのみの文字列を取り出す
         func ballCountFromNode_Player() ->String{
-            if nodeA.name!.hasPrefix(_playerBallShadowName_A){
-                return nodeA.name!.replacingOccurrences(of: _playerBallShadowName_A, with: "")
-                
-            }else
-                if nodeB.name!.hasPrefix(_playerBallShadowName_A){
-                    return nodeB.name!.replacingOccurrences(of: _playerBallShadowName_A, with: "")
-            }
-            print("！！！　ボールカウントは無い　　！！！")
-            return ""
-
+            return ballCountFromNode(name: _playerBallShadowName_A)
         }
         
         //敵のボールカウントのみの文字列を取り出す
         func ballCountFromNode_Enemy() ->String{
-            if nodeA.name!.hasPrefix(_enemyBallShadowName_A){
-                return nodeA.name!.replacingOccurrences(of: _enemyBallShadowName_A, with: "")
-                
-            }else
-                if nodeB.name!.hasPrefix(_enemyBallShadowName_A){
-                return nodeB.name!.replacingOccurrences(of: _enemyBallShadowName_A, with: "")
-            }
-            
-            print("！！！　ボールカウントは無い　　！！！")
-            return ""
+            return ballCountFromNode(name:_enemyBallShadowName_A)
         }
 
-        
-        
         func deleteBalls(){
             print(#function)
             
@@ -313,10 +305,9 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
             let strEnemyBallCount = ballCountFromNode_Enemy()
             print("enemyBallCount = \(strEnemyBallCount)")
             
-            
             //敵ボールの名前
             let enemyballName = _enemyBallName + strEnemyBallCount
-            print("敵ボール名\(enemyballName)")
+            print("敵ボール名　\(enemyballName)")
             
             //敵ボールの位置に　破裂パーティクルを表示する
             for node in self.children{
@@ -331,31 +322,25 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
                 _playerBallShadowName_A   + strPlayerBallCount,
                 _enemyBallName          + strEnemyBallCount,
                 _enemyBallShadowName_A    + strEnemyBallCount
-                
             ]
-            
             
             //ボールを探す
             for name in deleteNodeNames{
                 for node in self.children {
+                    
                     if node.name == name {
                         //ボールを削除
                         node.removeFromParent()
                         print("\(name) 削除")
-                    }else{
-//                        print("（；ー；）ボール削除失敗")
-                        
+                    }
+                    else{
+                        print("（；ー；）ボール削除失敗")
                     }
                 }
             }
             
         }
         
-        //破裂アニメーション
-        func addSpark(pos:CGPoint){
-            let particle = makeParticle(pos: pos, ballLevel: 1, type: .SPARK)
-            self.addChild(particle)
-        }
         
         
         func deleteNodeA(){
@@ -366,13 +351,16 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
             //ボール削除
         }
         
+        func deleteNodeB(){
+            
+        }
         
         func damege_BallSerch(){
             //ボール（影）はプレイヤーボールか？
             if nodeA.name!.hasPrefix(_playerBallShadowName_A) ||
                 nodeB.name!.hasPrefix(_playerBallShadowName_A){
                
-                let strCount = ballCountFromNode(node: nodeB)
+                let strCount = self.ballCountFromNode(node: nodeB)
                 print(strCount)
                 let ballName = _playerBallName + strCount
                 print(ballName)
@@ -381,19 +369,19 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
 
                 addSpark(pos: (ball?.position)!)
                 
+                
                 nodeB.removeFromParent()
 
             //ボール（影）は敵ボールか？
             }else if
                 nodeA.name!.hasPrefix(_enemyBallShadowName_A) ||
                     nodeB.name!.hasPrefix(_enemyBallShadowName_A){
-                let strCount = ballCountFromNode(node: nodeB)
+                let strCount = self.ballCountFromNode(node: nodeB)
                 let ballName = _enemyBallName + strCount
                 print(ballName)
                 let ball = self.childNode(withName: ballName)
                 
                 addSpark(pos: (ball?.position)!)
-//                addParticle(pos: (ball?.position)!, ballLevel: 1, type: .SPARK)
                 
                 nodeB.removeFromParent()
             }
@@ -401,32 +389,46 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
 
         
         func damage_Player(){
-
-            print("プレイヤーダメージ")
+            print("-----プレイヤーダメージ")
+            self.lifeDown_Player(value: 10)
             damege_BallSerch()
-        }
+            }
         
         func damage_Enemy(){
-            print("敵ダメージ")
+            print("-------敵ダメージ")
+            self.lifeDown_Enemy(value: 10)
             damege_BallSerch()
-            
         }
         
-//判定
+//MARK:衝突判定
         
         //プレイヤーと　敵ボール
         if nodeA.name! == _playerName && nodeB.name!.hasPrefix(_enemyBallShadowName_A){
             print("プレイヤーに　ボールがあたった")
             damage_Player()
-        }else
-            
+        }
+        
+        else
+        //プレイヤーと　敵アッパーボール
+            if nodeA.name! == _playerName && nodeB.name!.hasPrefix(_enemyUpperBallName){
+                print("プレイヤーに　upperボールがあたった")
+                damage_Player()
+            }
+            else
         //敵　と　プレイヤーボール
         if nodeA.name! == _enemyName && nodeB.name!.hasPrefix(_playerBallShadowName_A) {
             print("敵に　ボールが当たった")
             damage_Enemy()
+        }
             
-        }else
-           
+        else
+            //敵　と　プレイヤーアッパーボール
+            if nodeA.name! == _enemyName && nodeB.name!.hasPrefix(_playerUpperBallName) {
+                print("敵に　upperボールが当たった")
+                damage_Enemy()
+            }
+            else
+   
         //Hit playerBall    & enemyBall
         if nodeA.name!.hasPrefix(_playerBallName) && nodeB.name!.hasPrefix(_enemyBallName) ||
             nodeB.name!.hasPrefix(_playerBallName) && nodeA.name!.hasPrefix(_enemyBallName)
@@ -435,30 +437,114 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
             deleteBalls()
             
         }
+        else
+            if nodeA.name! == _enemyGroundLineName && nodeB.name!.hasPrefix(_playerUpperBallName){
+                
+                print("プレイヤーのアッパーボールが敵地面に当たった")
+                //破裂
+            addSpark(pos: nodeB.position)
+                
+            }
+            else
+                if nodeA.name! == _playerGroundLineNmae && nodeB.name!.hasPrefix(_enemyUpperBallName){
+                    print("敵のアッパーボールが敵地面に当たった")
+                    addSpark(pos: nodeB.position)
+        }
+
+    }
+//////////////////////////////////////////////////////////////////////////
+    //衝突処理 END
+//////////////////////////////////////////////////////////////////////////
+
+    func lifeDown_Player(value:Int){
+        _player.life = _player.life - value
+        self.chengeValue_LifeGauge_Player()
+    }
+    
+    func lifeDown_Enemy(value:Int){
+        _enemy.life = _enemy.life - value
+        self.chengeValue_LifeGauge_Enemy()
+    }
+
+    //破裂アニメーション
+    func addSpark(pos:CGPoint){
+        let particle = makeParticle(pos: pos, ballLevel: 1, type: .SPARK)
+        self.addChild(particle)
+    }
+
+    
+//MARK:- GameOver Check
+    
+    func check_GameOver(){
+        
+        if _player.life <= 1{
+            self.gameOver()
+        }
+        if _enemy.life <= 1 {
+            self.gameOver()
+        }
         
     }
+
+    func gameOver(){
+    print("---------- Game Over ---------------")
+    
+    }
+    
     
 //MARK:- イベントループ
     
     override func update(_ currentTime: TimeInterval) {
         // Called before each frame is rendered
         
+        self.check_GameOver()
+        //Player
         //タッチ中で移動していない場合のカウントする
         if _isTouchON && !_isTouchMove{
             _upDateCount_Touch += 1
             
             if _upDateCount_Touch  == 10 ||
                 _upDateCount_Touch  == 25 ||
-                _upDateCount_Touch  == 60{
+                _upDateCount_Touch  == 60
+            {
                 print("ボールサイズアップ！！")
                 _power += 1
-                _hasDummyBall_Player = true
+//                _hasDummyBall_Player = true
             }
+//            else{
+//                _upDateCount_Touch = 0
+//            }
         }
+        
+        if  _enemy.action == .STOP {
+            _upDateCount_Enemy += 1
+            print("_upDateCount_Enemy = \(_upDateCount_Enemy)")
+            
+            if _upDateCount_Enemy == 10 ||
+            _upDateCount_Enemy == 25 ||
+                _upDateCount_Enemy == 60 {
+                _power_Enemy += 1
+                print("＿敵の　ボールサイズアップ！！")
+            }
+        }else{
+            _upDateCount_Enemy = 0
+        }
+        
+        
+    }
+    
+    func checkCount(){
         
     }
     
     override func didEvaluateActions() {
+        if _enemy.action == .STOP{
+            self.enemyActions()
+        }
+//        else{
+//            print(_enemy.action.hashValue)
+//        }
+
 
     }
     
@@ -467,7 +553,8 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     
 ///////////////////////////////////////////////////////////////////////
     
-//MARK:-
+//MARK:- 開始
+    
     override func didMove(to view: SKView) {
         
         self.physicsWorld.contactDelegate = self
@@ -485,9 +572,16 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
 //MARK:Enamy　作成
         self.addEnemy()
         
-//中央線
-        self.addLine(beganPoint: CGPoint(x:-(self.frame.size.width) ,y:0 ), endPoint: CGPoint(x:self.frame.size.width ,y:0 ),name:"centerX_Line")
-        self.addLine(beganPoint:CGPoint(x:0 ,y:-(self.frame.size.height)), endPoint: CGPoint(x:0 ,y:self.frame.size.height),name:"centerY_Line")
+//MARK:中央線
+        let beganPoint = CGPoint(x:-(self.frame.size.width) ,y:0 )
+        let endPoint = CGPoint(x:self.frame.size.width ,y:0 )
+        
+        self.addEnemyGroundLine(beganPoint: beganPoint, endPoint: endPoint, name: _enemyGroundLineName)
+        
+//        self.addLine(beganPoint: CGPoint(x:-(self.frame.size.width) ,y:0 ), endPoint: CGPoint(x:self.frame.size.width ,y:0 ),name:"centerX_Line")
+        
+//MARK:中心線
+//        self.addLine(beganPoint:CGPoint(x:0 ,y:-(self.frame.size.height)), endPoint: CGPoint(x:0 ,y:self.frame.size.height),name:"centerY_Line")
         
 //MARK:初期設定　ボールの軌跡計算
 //        b4p.stP     = CGPoint(x: -(self.frame.size.width / 2), y: -(self.frame.size.height / 4 * 3))
@@ -530,24 +624,146 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         b3p2.contP   = CGPoint(x: (self.frame.size.width / 2) + 10, y: 50)
         b3p2.endP    = CGPoint(x: self.frame.size.width / 2, y: -(self.frame.size.height / 4 * 3))
         
-        let path3 = MyBezierShape.makeLinePathFrom3Points(b3p: b3p2)
-        self.addLineFromPath(path: path3)
-        self.addPlayerBall(path: path3)
-        
-        // 敵行動開始
-        let timer = Timer.scheduledTimer(timeInterval: 3.0, target: self, selector: #selector(GameScene.enemyActions), userInfo: nil, repeats: true)
-        timer.fire()
+//        let path3 = MyBezierShape.makeLinePathFrom3Points(b3p: b3p2)
+//        self.addLineFromPath(path: path3)
+//        self.addPlayerBall(path: path3)
+
         
         
-        //敵地面のY位置
+//        // 敵行動開始
+//        let timer = Timer.scheduledTimer(timeInterval: 3.0, target: self, selector: #selector(GameScene.enemyActions), userInfo: nil, repeats: true)
+//        timer.fire()
+        
+        
+//敵地面のY位置
         _groundPosY_Enemy = _enemy.position.y - _enemy.size.height / 2
         
-        //プレイヤー地面のY位置
+//プレイヤー地面のY位置
         _groundPosY_Player = _player.position.y - _player.size.height / 2
         
+//敵の移動できる左右の幅
+        _groundPosX_LeftSide_Enamey = self.frame.size.width / 4
+        _groundPosX_RightSide_Enamey = -self.frame.size.width / 4
+//        let moveRangeEnemy:SKRange = SKRange(lowerLimit: _groundPosX_LeftSide_Enamey, upperLimit: _groundPosX_RightSide_Enamey)
+        
+        print("LeftSide = \(_groundPosX_LeftSide_Enamey)")
+        print("RightSide = \(_groundPosX_RightSide_Enamey)")
+        
+        //Life
+        self.addLife_Player()
+        self.addLife_Enemy()
+        
+        //Magic
+        
+        self.addMagic_Player()
+    }
+    
+////////////////////////////////////////////////
+    
+//MARK:- ライフゲージ　マジックゲージ
+//    func makeGuage() -> SKSpriteNode{
+//    
+//    }
+    
+    func make_gauge(size:CGSize) -> MYGauge{
+        let node = MYGauge(texture: nil, color: .white, size: size)
+        node.anchorPoint = CGPoint(x: 0.5, y: 0.0)
+        
+        return node
     }
     
     
+    func make_gauge() ->SKSpriteNode{
+        //ライフゲージ
+        
+        let gaugeSize = CGSize(width: _gaugeWidth, height: _gaugeHeight)
+        let node = SKSpriteNode(color: .red, size: gaugeSize)
+        node.anchorPoint = CGPoint(x: 0.5, y: 0.0)
+        
+        
+        let sideLine = SKShapeNode(rect: node.frame)
+        sideLine.strokeColor = .white
+        node.addChild(sideLine)
+        
+        return node
+        
+    }
+    
+    //マジックゲージ
+    func make_gauge_Magic() ->  MYGauge{
+        let node = make_gauge(size: CGSize(width: _gaugeWidth, height: _gaugeHeight))
+        node.color = .green
+        return node
+    }
+//    func make_gauge_Magic() -> SKSpriteNode{
+//        let node = make_gauge()
+//        node.color = .green
+//        return node
+//    }
+    
+    
+    
+    func addMagic_Player(){
+        let magicGuage = make_gauge_Magic()
+        magicGuage.position = CGPoint(x: -self.frame.size.width / 2 + 25,
+                                      y: self.anchorPoint.y - (_gaugeHeight / 2))
+        self.addChild(magicGuage)
+    }
+    
+    
+    func addLife_Player(){
+        //ライフゲージ
+        _lifeGauge_Player = make_gauge()
+        
+        _lifeGauge_Player.position = CGPoint(x: -self.frame.size.width / 2 + 10,
+                                             y: self.anchorPoint.y - (_gaugeHeight / 2))
+//        print("lifepos = \(_lifeGauge_Player.position)")
+        
+        self.addChild(_lifeGauge_Player)
+    }
+    
+    func addLife_Enemy(){
+       _lifeGauge_Enemy = make_gauge()
+        _lifeGauge_Enemy.color = .blue
+        _lifeGauge_Enemy.position = CGPoint(x: self.frame.size.width / 2 - 10,
+                                            y: self.anchorPoint.y - (_gaugeHeight / 2))
+        
+        self.addChild(_lifeGauge_Enemy)
+    }
+    
+    func addMagic_Enemy(){
+        
+    }
+    
+    //MARK:ライフ　マジックゲージ
+    //MARK:ライフ値をゲージに反映
+    func chengeValue_LifeGauge_Player(){
+        //
+        print("プレイヤーライフ値をゲージに反映")
+        let newHeight = CGFloat(Double(_gaugeHeight) * Double(_player.life) / 100.0)
+        _lifeGauge_Player.size = CGSize(width: _gaugeWidth, height:newHeight)
+        
+    }
+    
+    func chengeValue_LifeGauge_Enemy(){
+        //
+        print("敵ライフ値をゲージに反映")
+        let newHeight = CGFloat(Double(_gaugeHeight) * Double(_enemy.life) / 100.0)
+        _lifeGauge_Enemy.size = CGSize(width: _gaugeWidth, height:newHeight)
+        
+    }
+
+    
+    
+    func changeValue_MagicGauge_Player(){
+        print("マジック値をゲージに反映")
+        let newHeight = CGFloat(Double(_gaugeHeight) * Double(_player.magicPower) / 100.0)
+//        _magicGauge_Player.size = CGSize(width: _gaugeWidth, height:newHeight)
+        
+    }
+    
+    func changeValue_MagicGauge_Enemy(){
+    }
     
     
     //MARK:-
@@ -567,17 +783,16 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     func enemyActions(){
         print(#function)
         
-//        print(_enemy.action)
-        
-        _enemy.nextAction()
-        
         //今なにもしていないか　チェック
-//        if _enemy.action == .STOP {
+        if _enemy.action == .STOP {
             
+            //ランダムでアクションを選択
+            _enemy.nextAction()
+
             switch _enemy.action!{
             
             case .BallThrow:
-                //ボールを投げる
+            //ボールを投げる
                 self.enemyAction_BallThrow()
                 
             case .MoveToLeft:
@@ -586,18 +801,17 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
             case .MoveToRight:
              //右　移動する
                 self.enemyAction_MoveRight()
-            
+            case .BallThrow_Big:
+                
+                self.enemyAction_BallThrow_Upper()
+                
             default:
                 print("????   enemy default case")
-                
             }
             
-//        }else{
-//            //何もしない
-//            
-//        }
-        
-        
+        }else{
+            //何もしない
+        }
     }
 
     
@@ -607,17 +821,20 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         print("ボールをなげる")
         let bp = makeBezierCurve3Points_Enemy(pos: _enemy.position)
         
-        self.addControlLine1(point0: bp.stP, point1: bp.contP)
-        self.addControlLine2(point0: bp.endP, point1: bp.contP)
-        //軌道計算
+        //ライン表示
+//        self.addControlLine1(point0: bp.stP, point1: bp.contP)
+//        self.addControlLine2(point0: bp.endP, point1: bp.contP)
+
+    //軌道計算
         let path = self.makePath_3points(bp:bp)
         self.addEnemyBall(path:path)
         self._enemy.action = .STOP
     }
+    
     //MARK:ボールを上に投げる
-    func enemyAction_BallThrow_Big(){
-    print("ボールを上になげる")
-        
+    func enemyAction_BallThrow_Upper(){
+        print("ボールを上になげる")
+        self.addEnemyBall_Upper()
         self._enemy.action = .STOP
         
     }
@@ -625,18 +842,20 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     //MARK:左へ移動
     func enemyAction_MoveLeft(){
         print("左へ移動")
-        //どこへ移動するか　-画面の横幅/4 +画面の横幅/4
         
-        //現在地から目的地まで
-        
-        
-        
-        //今の位置と移動先の距離
-        
+        //移動できる幅
+        let moveRangeX = abs(_groundPosX_LeftSide_Enamey) - abs(_enemy.position.x)
+//        print("移動できる幅 \(moveRangeX)")
+        //現在地から左の移動可能ポイント
+        let randamX = arc4random_uniform(UInt32(moveRangeX))
+//        print("\(randamX) 左に移動")
         //距離から移動時間を計算
+        let moveSec:TimeInterval =  TimeInterval(Double(randamX) / 40.0)
+        
+        print("左へ　\(moveSec)秒で　\(randamX)移動　")
         
         //アクションを作成
-        let action = SKAction.moveBy(x: 5, y: 0, duration: 0.5)
+        let action = SKAction.moveBy(x: -CGFloat(randamX), y: 0, duration: moveSec)
         
         _enemy.run(action, completion: {
          self._enemy.action = .STOP
@@ -647,13 +866,37 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     func enemyAction_MoveRight(){
         print("右へ移動")
         
-        let action = SKAction.moveBy(x: -5, y: 0, duration: 0.5)
+        //移動できる幅
+        let moveRangeX = abs(_groundPosX_RightSide_Enamey) - abs(_enemy.position.x)
+        
+        //現在地から左の移動可能ポイント
+        let randamX = arc4random_uniform(UInt32(moveRangeX))
+        
+        //距離から移動時間を計算
+        let moveSec:TimeInterval =  TimeInterval(Double(randamX) / 40.0)
+        
+        print("右へ　\(moveSec)秒で　\(randamX)移動　")
+
+        //アクションを作成
+        let action = SKAction.moveBy(x: CGFloat(randamX), y: 0, duration: moveSec)
         
         _enemy.run(action, completion: {
             self._enemy.action = .STOP
         })
-
     }
+    
+    //移動できるポイントをかえす
+//    func enemy_MovingRandomPositionX() -> CGFloat{
+//        var value:CGFloat = 0.0
+//        let left = _groundPosX_LeftSide_Enamey - _enemy.position.x
+//        let right = _enemy.position.x -  _groundPosX_RightSide_Enamey
+//        
+//        return value
+//    }
+    //移動するポイントから移動時間をかえす
+//    func distanceToTime(value:CGFloat) -> TimeInterval{
+//        
+//    }
 
 //    func enemyAction_LeftMove(){
 //        //左に移動できるスペースがあるか？
@@ -673,6 +916,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     
     
     //MARK:- player Action
+    //MARK:ボールを投げる
     func playerAction_BallThrow(){
         
         let bp = makeBezierCurve3Points_Player(pos: _player.position)
@@ -683,80 +927,18 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         //ベジェ曲線
 //        let shapeLine = self.makeShapeLine(bp: bp)
 //        self.addChild(shapeLine)
+
         //軌道計算
         let path = self.makePath_3points(bp:bp)
         
         self.addPlayerBall(path:path)
-        
     }
     
+    //MARK:ボールを上に投げる
     func playerAction_BallThrow_Big(){
-        //上になげる
-        
-        let ball = makeBall_Player()
-        ball.position = _player.position
-        //プレイヤーより奥に表示
-        ball.zPosition = _player.zPosition - 0.01
-        
-        
-        // 火のエフェクトを追加
-        let emitter = makeEmitter_Fire()
-        emitter.setScale(CGFloat(_power))
-        
-        ball.addChild(emitter)
-        self.addChild(ball)
-        
-        //ボールの上空　位置
-        let pos_Aerial = CGPoint(x:_player.position.x / 2.0,y:(self.view?.frame.height)!)
-        //ボールの落ちる位置
-        let pos_Fall = CGPoint(x: pos_Aerial.x, y: _groundPosY_Enemy)
-        let actionFall = SKAction.move(to: pos_Fall, duration: 0.5)
-        
-        actionFall.timingMode = .easeIn
-
-        //アクション実行
-        let action = SKAction.sequence([
-            //上になげる（画面外へ消える）
-            SKAction.moveTo(y: (self.view?.frame.size.height)!, duration: 0.5),
-            //１秒後
-            SKAction.wait(forDuration: 1),
-            //スケールを半分に
-            SKAction.scale(by: 0.5, duration: 0.0),
-            //敵上空に移動
-            SKAction.move(to: pos_Aerial, duration: 0.0),
-            //落下
-            actionFall,
-            //削除する
-            SKAction.removeFromParent()
-            ])
-        
-        ball.run(action, completion: {
-          print("")
-        })
-        
-        //ボールの影
-        let shadow = makeShadowNode(size: ball.frame.size, name: "")
-        shadow.alpha = 0.0
-        shadow.setScale(0.1)
-        shadow.position = pos_Fall
-        self.addChild(shadow)
-        
-        let shadowAction = SKAction.sequence([
-            
-            SKAction.group([
-                SKAction.fadeAlpha(to: 1.0, duration: 2.0),
-                SKAction.scale(to: 1.0, duration: 2.0)
-                ]),
-            SKAction.removeFromParent()
-            ])
-        shadowAction.timingMode = .easeIn
-        shadow.run(shadowAction, completion: {
-            
-        })
-        
+        self.addPlayerBall_Upper()
     }
 
-    
 
     func playerAction_LeftMove(){
 //        print("左に移動")
@@ -764,23 +946,13 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     }
     
     func playerAction_RightMove(){
-        //右に移動できるスペースがあるか？
 //        print("右に移動")
         _player.run(SKAction.moveBy(x: 10, y: 0, duration: 0.1))
         
     }
     
     func playerDamegeAction(damege:Int){
-        
         _player.life -= damege
-        
-        if _player.life <= 0 {
-            
-            
-        }
-        
-        
-        
     }
     
 //MARK:- Set
@@ -837,11 +1009,9 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         return emitter
     }
 
-    
-    
     //MARK:- 影を作成
     func makeShadowNode(size:CGSize,name:String) -> SKShapeNode{
-        let newSize = CGSize(width: size.width, height: size.height / 2)
+        let newSize = CGSize(width: size.width, height: size.height / 4)
         let shadow = SKShapeNode(ellipseOf: newSize)
         shadow.fillColor = .black
         shadow.alpha = 0.8
@@ -859,8 +1029,6 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         shadow.physicsBody?.collisionBitMask    = _enemyCategory
         shadow.physicsBody?.contactTestBitMask  = _enemyCategory
         
-//        shadow.name = name
-        
         return shadow
     }
 
@@ -870,8 +1038,6 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         shadow.physicsBody?.categoryBitMask     = _enemyCategory
         shadow.physicsBody?.collisionBitMask    = _playerCategory
         shadow.physicsBody?.contactTestBitMask  = _playerCategory
-        
-//        shadow.name = name
         
         return shadow
     }
@@ -910,7 +1076,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     }
 
     
-    //MARK:ボールなげる
+    //MARK:ボールなげるアクション
     func makeThrowAction(path:CGPath) ->SKAction{
         let action =
             SKAction.sequence([
@@ -937,7 +1103,6 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         action.timingMode = .easeIn
         return action
     }
-
 
     ///MARK:- キャラクターのアニメーションパターン返す
     func makeCharaAnimationTextures(charaNumber:Int,direction:Direction) -> [SKTexture]{
@@ -966,12 +1131,9 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         return [tex0,tex1,tex2,tex1]
     }
 
-    
-    
     func make_charaTexture(){
         
         //chara.png から　キャラパターンごとtextureに分割
-        
         let ary_charaTex = MyCharaNode.make_tile(textureName: "chara1.png",
                                                  numRow: 12, numColums: 8)
 
@@ -980,10 +1142,6 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         
         var aryTex = [SKTexture]()
         var dicTex = [String:[SKTexture]]()
-//        var dicCharaAnimeTex = [String:[String:[SKTexture]]]()
-//        let direction:[String] = ["left","down","right","up"]
-        
-//        let numAnimePattern = ary_charaTex.count / 3 //アニメーションパターン数
 
         //キャラクタの数を計算　１キャラ（３アニメパターン　x　４方向）
         let numCharas = ary_charaTex.count / (3 * 4) //キャラクター数
@@ -1027,16 +1185,6 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         node.zPosition = 1.0
         node.run(SKAction.repeatForever(act_Anime))
         
-//        let physicsSize = CGSize(width: node.frame.size.width * 0.75, height: node.frame.size.height)
-//        
-//        node.physicsBody = SKPhysicsBody(rectangleOf:physicsSize)
-//        node.physicsBody?.affectedByGravity = false
-//        node.physicsBody?.allowsRotation = false
-//        
-//        node.physicsBody?.categoryBitMask = _playerCategory
-//        node.physicsBody?.collisionBitMask = 0//_enemyBallShadowCategory
-//        node.physicsBody?.contactTestBitMask = 0//_enemyBallShadowCategory
-        
         return node
         
     }
@@ -1052,19 +1200,12 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         
         let act_Anime = SKAction.animate(with:node.ary_DownTextures , timePerFrame: 0.3)
   
-        
         //敵として設定
         node.name = _enemyName
         node.zPosition = 0.5
         
         node.run(SKAction.repeatForever(act_Anime))
         
-//        node.physicsBody = SKPhysicsBody(rectangleOf: node.frame.size)
-//        node.physicsBody?.affectedByGravity = false
-//        node.physicsBody?.allowsRotation = false
-//        node.physicsBody?.categoryBitMask = _enemyCategory
-//        node.physicsBody?.collisionBitMask = 0//_playerBallShadowCategory
-//        node.physicsBody?.contactTestBitMask = 0//_playerBallShadowCategory
         return node
         
     }
@@ -1117,23 +1258,14 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     
     func makeBezierCurve3Points_Enemy(pos:CGPoint) -> MyBezierShape.Bezier3Points{
         var bp = MyBezierShape.Bezier3Points()
-        
         bp.stP = CGPoint(x: _enemy.position.x, y: _enemy.position.y + _enemy.size.height / 2)
-        
         //Enemy 位置からエンド位置を計算する
         bp.endP = CGPoint(x: pos.x * 2.0, y: _player.position.y)
-
-        //コントロールポイントを計算する
-        //        bp = calcControllPoint(bp: bp)
         
     //比率(ratio)を計算
         let contPosRatio = abs(bp.endP.x) / self.frame.size.width
-        //
         let contPosX = abs(_b3p.contP.x) * contPosRatio
-        
         bp.contP = CGPoint(x: contPosX, y: _b3p.contP.y)
-    ///
-        
         //画面の左側の場合は、ーXにする
         if pos.x < 0 {
             bp.contP = CGPoint(x: -contPosX, y: _b3p.contP.y)
@@ -1145,34 +1277,6 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     
 
     //Posから計算
-    func makeBezierCurve4Points(pos:CGPoint) -> MyBezierShape.Bezier4Points{
-        
-        var bp = MyBezierShape.Bezier4Points()
-        
-        bp.stP = CGPoint(x: pos.x, y: _b4p.stP.y)
-        
-        //スタート位置からエンド位置を計算する
-        bp.endP = CGPoint(x: pos.x / 2.0, y: self.anchorPoint.y)
-        
-        //コントロールポイント１、２を計算する
-        //中心からタッチしたXまでと比率(ratio)を計算
-        let contPos1Ratio =  abs(bp.stP.x) / (self.frame.size.width / 2.0)
-        let contPos1X = abs(_b4p.contP1.x) * contPos1Ratio
-        
-        bp.contP1 = CGPoint(x: contPos1X, y: _b4p.contP1.y)
-        
-        let contPos2Ratio = abs(bp.endP.x) / (self.frame.size.width / 4.0)
-        let contPos2X = abs(_b4p.contP2.x) * contPos2Ratio
-        
-        bp.contP2 = CGPoint(x: contPos2X, y: _b4p.contP2.y)
-        
-        //画面の左側がタッチされた場合は、ーXにする
-        if pos.x < 0 {
-            bp.contP1 = CGPoint(x: -contPos1X, y: _b4p.contP1.y)
-            bp.contP2 = CGPoint(x: -contPos2X, y: _b4p.contP2.y)
-        }
-        return bp
-    }
 
     //ボール名
     func makeBallCountString() -> String{
@@ -1217,16 +1321,6 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         return shape
     }
 
-    
-//    func makeShapeLine(bp:MyBezierShape.Bezier4Points) -> SKShapeNode{
-//        let cgPath = makePath_4points(bp: bp)
-//        
-//        let shape = SKShapeNode(path: cgPath)
-//        shape.strokeColor = .red
-//        
-//        return shape
-//    }
-    
     func makeShapeLine(bp:MyBezierShape.Bezier3Points) -> SKShapeNode{
         let cgPath = makePath_3points(bp: bp)
         let shape = SKShapeNode(path: cgPath)
@@ -1244,12 +1338,6 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         return path.cgPath
     }
 
-//    func makePath_4points(bp:MyBezierShape.Bezier4Points) -> CGPath{
-//        let path = UIBezierPath()
-//        path.move(to: bp.stP)
-//        path.addCurve(to: bp.endP, controlPoint1: bp.contP1, controlPoint2: bp.contP2)
-//        return path.cgPath
-//    }
     
     func makeBallShadowMoveLine_Player() -> CGPath{
         let bp = makeBezierCurve3Points_Player(pos: _player.position)
@@ -1259,15 +1347,12 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         
     }
 
-    
-    
     func makePath_Line(beganPoint:CGPoint,endPoint:CGPoint) -> CGPath{
         
         // 線のパスを生成.
         let path = UIBezierPath()
         path.move(to: beganPoint)
         path.addLine(to: endPoint)
-        
         // パスを線に反映.
         return path.cgPath
     }
@@ -1277,23 +1362,15 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     func makeBall_Player() -> MyShapeNode{
         let ball = makeShapeCircle(radius: _ary_BallRadius[_power])
         ball.fillColor = .orange
-        
-//        print("height = \(ball.frame.size.height)")
-
-            return ball
-        
+        return ball
     }
-    
     
     func makeBall_Enemy() -> MyShapeNode{
-        let ball = makeShapeCircle(radius: _ary_BallRadius[1])
+        let ball = makeShapeCircle(radius: _ary_BallRadius[_power_Enemy])
         ball.fillColor = .orange
         ball.zPosition = 0.5
-        
         return ball
-        
     }
-
     
     func makeEmitter_Fire() ->SKEmitterNode{
          let node = SKEmitterNode(fileNamed: "FireParticle.sks")
@@ -1313,7 +1390,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
     //MARK:- Add 画面に追加する
     //MARK:プレイヤー追加
     func addPlayer(){
-        self._player = self.makePlayer(charaNumber: 3)
+        self._player = self.makePlayer(charaNumber: _playerCharaNumber)
         self._player.position = CGPoint(x: 0, y: -(self.frame.size.height / 2))
       
         //移動できる幅を制限
@@ -1329,7 +1406,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         
         
         //プレイヤーの影
-        let shadowSize = CGSize(width: self._player.size.width / 2, height:self._player.size.height / 6)
+        let shadowSize = CGSize(width: self._player.size.width / 2, height:self._player.size.height / 4)
         let shadow = SKShapeNode(ellipseOf:shadowSize)
         shadow.name = _playerName
         shadow.fillColor = .black
@@ -1346,7 +1423,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         
     }
     
-
+//MARK:Player Ball
     func addPlayerBall(path:CGPath){
         
         let ball = makeBall_Player()
@@ -1376,10 +1453,8 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         ball.addChild(emitter)
         self.addChild(ball)
         
-        //MARK:playerボールのかげ
-        
+    //playerボールのかげ
         let ballShadow = makeShadowNode_Player(size: ball.frame.size, name: ball.name!)
-//        ballShadow.name = ball.name!
         ballShadow.name = _playerBallShadowName_A + str_Ballcount
         ballShadow.position = CGPoint(x: _player.position.x, y: _player.position.y - _player.frame.size.height / 3)
         self.addChild(ballShadow)
@@ -1392,14 +1467,110 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         
         ballShadow.run(shadowAction, completion: {
             
-            
         })
         
     }
     
-    //MARK:Enemy
+    func addPlayerBall_Upper(){
+        print("アッパーボール発射！！！！！！！！")
+        let ball = makeBall_Player()
+        ball.fillColor = .black
+        ball.position = _player.position
+        //プレイヤーより奥に表示
+        ball.zPosition = _player.zPosition - 0.01
+        
+        
+        // 火のエフェクトを追加
+        let emitter = makeEmitter_Fire()
+        emitter.setScale(CGFloat(_power))
+        
+        ball.addChild(emitter)
+        self.addChild(ball)
+        
+        //ボールの上空　位置
+        let pos_Aerial = CGPoint(x:_player.position.x / 2.0,y:(self.view?.frame.height)!)
+        
+        //ボールの落ちる位置
+        let pos_Fall = CGPoint(x: pos_Aerial.x, y: _groundPosY_Enemy)
+        let actionFall = SKAction.move(to: pos_Fall, duration: 0.5)
+        
+        
+        actionFall.timingMode = .easeIn
+        
+        //アクション実行
+        let action = SKAction.sequence([
+//上になげる（画面外へ消える）
+            SKAction.moveTo(y: (self.view?.frame.size.height)!, duration: 0.5),
+            //削除する
+            SKAction.removeFromParent()
+            ])
+        
+        ball.run(action, completion: {
+            print("アッパーボール　アクション終わり")
+            
+        })
+        
+//落下用のボール作成
+        let fallBall = makeBall_Player()
+        fallBall.name = _playerUpperBallName
+        fallBall.fillColor = .black
+        
+        fallBall.setScale(0.5)
+        fallBall.position = pos_Aerial
+        fallBall.physicsBody = SKPhysicsBody(circleOfRadius: ball.frame.size.width / 4)
+        fallBall.physicsBody?.categoryBitMask = self._playerUpperBallCategory
+        fallBall.physicsBody?.collisionBitMask = self._enemyCategory
+        fallBall.physicsBody?.contactTestBitMask = self._enemyCategory
+
+        
+//  遅延実行  //////////////////////
+        let dispatchTime = DispatchTime.now() + 1.5
+        DispatchQueue.main.asyncAfter( deadline: dispatchTime ) {
+    
+        fallBall.addChild(emitter)
+        self.addChild(fallBall)
+        }
+//  遅延実行 終わり  //////////////////////
+        
+        //ボールの影
+        let shadow = makeShadowNode(size: ball.frame.size, name: "")
+        shadow.alpha = 0.0
+        shadow.setScale(0.1)
+        shadow.position = pos_Fall
+        self.addChild(shadow)
+        
+        let actionFallBall = SKAction.sequence([
+            
+            //落下
+            actionFall,
+            //削除する
+            SKAction.removeFromParent()
+            ])
+        
+        fallBall.run(actionFallBall, completion: {
+            print("落下ボールアクション　終了")
+            shadow.removeFromParent()
+            
+        })
+
+        let shadowAction = SKAction.sequence([
+            
+            SKAction.group([
+                SKAction.fadeAlpha(to: 0.8, duration: 2.0),
+                SKAction.scale(to: 0.8, duration: 2.0)
+                ]),
+            SKAction.removeFromParent()
+            ])
+        shadowAction.timingMode = .easeIn
+        shadow.run(shadowAction, completion: {
+            
+        })
+    }
+
+    
+//MARK:- 敵
     func addEnemy(){
-        self._enemy = makeEnemy(charaNumber: 2)
+        self._enemy = makeEnemy(charaNumber: _enemyCharaNumber)
         
         //移動できる幅を制限
         let rangeX = SKRange(lowerLimit: -self.frame.size.width / 4 + _enemy.size.width / 2,
@@ -1409,8 +1580,6 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         
         let constraint = SKConstraint.positionX(rangeX, y: rangeY)
         self._enemy.constraints = [constraint]
-
-        
         
         self._enemy.position = CGPoint(x: 0, y: anchorPoint.y + self._enemy.frame.size.height / 2)
         self.addChild(self._enemy)
@@ -1423,9 +1592,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         shadow.alpha = 0.8
         shadow.position = CGPoint(x: 0, y: -_enemy.size.height / 2)
         
-        
         shadow.physicsBody = SKPhysicsBody(edgeLoopFrom: shadow.path!)
-
         shadow.physicsBody?.affectedByGravity = false
         shadow.physicsBody?.categoryBitMask     = _enemyCategory
         shadow.physicsBody?.collisionBitMask    = _playerCategory
@@ -1434,7 +1601,7 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         self._enemy.addChild(shadow)
     }
     
-    //MARK:Enemy Ball
+    //MARK:敵 Ball
     func addEnemyBall(path:CGPath){
         let ball = makeBall_Enemy()
         let str_Ballcount = makeBallCountString()
@@ -1444,24 +1611,18 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         
         ball.setScale(0.5)
         ball.originalHeight = ball.frame.size.height
-//        print("enemyBallOrigin = \(ball.originalHeight)")
         
-        let actionThrow = makeThrowAction_Enemy(path: path)
-
-        let action = SKAction.group([
-            actionThrow,
-            ])
+        let action = makeThrowAction_Enemy(path: path)
         
         action.timingMode = SKActionTimingMode.easeIn
         
         ball.run(action, completion: {
             print("Enemy Throw action end")
-            self.deleteControlLine()
+//            self.deleteControlLine()
         })
         
         let emitter = makeEmitter_Ice()
         ball.addChild(emitter)
-       
         
         self.addChild(ball)
         
@@ -1484,7 +1645,109 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
 
     }
     
-    //MARK:パーティクル追加
+    //MARK:敵Upperボール
+    func addEnemyBall_Upper(){
+        //上に投げるボール
+        let ball = makeBall_Enemy()
+        ball.fillColor = .blue
+        ball.position = _enemy.position
+        ball.zPosition = _enemy.zPosition + 0.01
+        
+        
+        //エフェクト追加
+        let emitter = makeEmitter_Ice()
+//        emitter.setScale(CGFloat(_power))
+        
+        ball.addChild(emitter)
+        
+        ball.setScale(0.5)
+        
+        self.addChild(ball)
+
+        //相手の上空のボール
+        //ボールの　位置 プレイヤーの上空
+        let pos_Aerial = CGPoint(x:_enemy.position.x * 2 ,y:(self.view?.frame.height)!)
+        //アクション実行
+        let action = SKAction.sequence([
+            //上になげる（画面外へ消える）
+            SKAction.moveTo(y: (self.view?.frame.size.height)!, duration: 0.5),
+            //削除する
+            SKAction.removeFromParent()
+            ])
+        
+        ball.run(action, completion: {
+            print("アッパーボール　アクション終わり")
+        })
+
+        
+        //ボールの落ちる位置
+        let pos_Fall = CGPoint(x: pos_Aerial.x, y: _groundPosY_Player)
+        let actionFall = SKAction.move(to: pos_Fall, duration: 0.5)
+        
+        
+        actionFall.timingMode = .easeIn
+        
+    //落下用のボール作成
+        let fallBall = makeBall_Enemy()
+        fallBall.name = _enemyUpperBallName
+        fallBall.fillColor = .blue
+        
+//        fallBall.setScale(0.5)
+        fallBall.position = pos_Aerial
+        fallBall.physicsBody = SKPhysicsBody(circleOfRadius: ball.frame.size.width / 2)
+        fallBall.physicsBody?.categoryBitMask = self._enemyUpperBallCategory
+        fallBall.physicsBody?.collisionBitMask = self._playerCategory
+        fallBall.physicsBody?.contactTestBitMask = self._playerCategory
+
+//  遅延実行  //////////////////////
+        
+        let dispatchTime = DispatchTime.now() + 1.25
+        
+        DispatchQueue.main.asyncAfter( deadline: dispatchTime ) {
+            //処理
+            
+            fallBall.addChild(emitter)
+            self.addChild(fallBall)
+            
+            
+            let actionFallBall = SKAction.sequence([
+                
+                //落下
+                actionFall,
+                //削除する
+                SKAction.removeFromParent()
+                ])
+            
+            fallBall.run(actionFallBall, completion: {
+                print("落下ボールアクション　終了")
+            })
+            
+        }
+//  遅延実行 終わり  //////////////////////
+
+        //ボールの影
+        let shadow = makeShadowNode(size: ball.frame.size, name: "")
+        shadow.alpha = 0.0
+        shadow.setScale(0.1)
+        shadow.position = pos_Fall
+        self.addChild(shadow)
+        
+        let shadowAction = SKAction.sequence([
+            
+            SKAction.group([
+                SKAction.fadeAlpha(to: 0.8, duration: 2.0),
+                SKAction.scale(to: 2.5, duration: 2.0)
+                ]),
+            SKAction.removeFromParent()
+            ])
+        shadowAction.timingMode = .easeIn
+        shadow.run(shadowAction, completion: {
+            
+        })
+    }
+    
+    
+    //MARK:- パーティクル追加
     func addParticle(pos:CGPoint, ballLevel:Int, type:MagicBallType){
         print(#function)
         var emitter = SKEmitterNode()
@@ -1494,12 +1757,10 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
             emitter = makeEmitter_Fire()
         case .ICE:
             emitter = makeEmitter_Ice()
-            
         case .SPARK:
             emitter = makeEmitter_Spark()
         }
         
-    
        emitter.setScale(CGFloat(ballLevel))
         print("ballLevel = \(ballLevel)")
         emitter.position = pos
@@ -1511,13 +1772,10 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         emitter.run(action, completion: {
             print("パーティクル終了")
         })
-        
         self.addChild(emitter)
     }
     
-    //MARK: 線を表示
-
-    
+    //MARK:- 線を表示
     func addControlLine1(point0:CGPoint,point1:CGPoint){
         let line = self.makeLine(beganPoint: point0, endPoint: point1,name:"controlpoint1")
         line.strokeColor = .red
@@ -1530,7 +1788,6 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         self.addChild(line)
     }
 
-    
     func addLineFromPath(path:CGPath){
         let line = SKShapeNode(path:path)
         line.strokeColor = .yellow
@@ -1543,5 +1800,15 @@ class GameScene: SKScene,SKPhysicsContactDelegate {
         self.addChild(line)
     }
     
-    
+    func addEnemyGroundLine(beganPoint:CGPoint,endPoint:CGPoint,name:String?){
+        let line = makeLine(beganPoint: beganPoint, endPoint: endPoint, name: name)
+        line.name = name
+        line.physicsBody = SKPhysicsBody(edgeFrom: beganPoint, to: endPoint)
+        line.physicsBody?.categoryBitMask = _enemyGroundLineCategory
+        line.physicsBody?.collisionBitMask = _playerUpperBallCategory
+        line.physicsBody?.contactTestBitMask = _playerUpperBallCategory
+        
+        // Sceneに追加.
+        self.addChild(line)
+    }
 }

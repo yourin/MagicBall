@@ -17,6 +17,7 @@
 		DB3CC6681E9F2D7600EE52FB /* MyCharaNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3CC6671E9F2D7600EE52FB /* MyCharaNode.swift */; };
 		DB3CC66A1EA07A5500EE52FB /* chara1.png in Resources */ = {isa = PBXBuildFile; fileRef = DB3CC6691EA07A5500EE52FB /* chara1.png */; };
 		DB3CC66C1EA26C2800EE52FB /* MyShapeNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3CC66B1EA26C2800EE52FB /* MyShapeNode.swift */; };
+		DB9702381F1E539000E81BB6 /* MYGuage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9702371F1E539000E81BB6 /* MYGuage.swift */; };
 		DBAE8C6D1EAC267E006C5388 /* FireParticle.sks in Resources */ = {isa = PBXBuildFile; fileRef = DBAE8C6C1EAC267E006C5388 /* FireParticle.sks */; };
 		DBAE8C711EAC26B9006C5388 /* SparkParticle.sks in Resources */ = {isa = PBXBuildFile; fileRef = DBAE8C701EAC26B9006C5388 /* SparkParticle.sks */; };
 		DBAE8C731EAD5778006C5388 /* IceParticle.sks in Resources */ = {isa = PBXBuildFile; fileRef = DBAE8C721EAD5778006C5388 /* IceParticle.sks */; };
@@ -36,6 +37,7 @@
 		DB3CC6671E9F2D7600EE52FB /* MyCharaNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MyCharaNode.swift; sourceTree = "<group>"; };
 		DB3CC6691EA07A5500EE52FB /* chara1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = chara1.png; sourceTree = "<group>"; };
 		DB3CC66B1EA26C2800EE52FB /* MyShapeNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MyShapeNode.swift; sourceTree = "<group>"; };
+		DB9702371F1E539000E81BB6 /* MYGuage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MYGuage.swift; sourceTree = "<group>"; };
 		DBAE8C6C1EAC267E006C5388 /* FireParticle.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = FireParticle.sks; sourceTree = "<group>"; };
 		DBAE8C701EAC26B9006C5388 /* SparkParticle.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = SparkParticle.sks; sourceTree = "<group>"; };
 		DBAE8C721EAD5778006C5388 /* IceParticle.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = IceParticle.sks; sourceTree = "<group>"; };
@@ -76,6 +78,7 @@
 				DB035D0D1E98719C00B0CD40 /* MyBezierShape.swift */,
 				DB3CC66B1EA26C2800EE52FB /* MyShapeNode.swift */,
 				DB3CC6671E9F2D7600EE52FB /* MyCharaNode.swift */,
+				DB9702371F1E539000E81BB6 /* MYGuage.swift */,
 				DBAE8C741EAE3436006C5388 /* MyEnemyCharaNode.swift */,
 				DB143A801E9156B600D1EF5A /* GameViewController.swift */,
 				DB143A7E1E9156B600D1EF5A /* GameScene.swift */,
@@ -175,6 +178,7 @@
 				DB035D0E1E98719C00B0CD40 /* MyBezierShape.swift in Sources */,
 				DB143A791E9156B600D1EF5A /* AppDelegate.swift in Sources */,
 				DB3CC66C1EA26C2800EE52FB /* MyShapeNode.swift in Sources */,
+				DB9702381F1E539000E81BB6 /* MYGuage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

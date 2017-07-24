@@ -45,13 +45,14 @@ enum Action:Int {
     case BallThrow = 1
     case MoveToLeft = 2
     case MoveToRight = 3
+    case BallThrow_Big = 4
 }
 
 
 
 class MyCharaNode:SKSpriteNode {
     var charaNumber:Int! = 0
-    var charType:CharactorType! = .NORMAL
+    var charType:CharactorType! = .SPEED
     var moveSpeed:MoveSpeed!    = .NORMAL
     var throwPower:ThrowPower!  = .NORMAL
     var magicType:MagicType!    = .FIRE
@@ -59,14 +60,17 @@ class MyCharaNode:SKSpriteNode {
     var direction:Direction!    = .UP
     
     var life:Int = 100  //
+    var magicPower:Int = 100
+    
     var ary_LeftTextures:[SKTexture]!    = [SKTexture]()
     var ary_RightTextures:[SKTexture]!   = [SKTexture]()
     var ary_UpTextures:[SKTexture]!      = [SKTexture]()
     var ary_DownTextures:[SKTexture]!    = [SKTexture]()
 
-    
+
     override init(texture: SKTexture?, color: UIColor, size: CGSize) {
         super.init(texture: texture, color: color, size: size)
+        self.action = .STOP
         
     }
     
@@ -116,51 +120,98 @@ class MyCharaNode:SKSpriteNode {
     func nextAction(){
         //停止中であるか？
         if self.action == .STOP {
-            //ランダムで次のアクション
             let val:UInt32 = 10
             let nextValue = Int(arc4random_uniform(val))
             print("nextValue = \(nextValue)")
             
-            switch nextValue{
-            case 0:
-                self.stateStop()
-            case 1,3,7,8:
-                self.stateThrow()
-            case 2,4:
-                self.stateMoveLeft()
-//                self.action = .MoveToLeft
-//                print("MoveLeftにセット")
-            case 3,6:
-                self.stateMoveRight()
-//                self.action = .MoveToRight
-//                print("MoveRightにセット")
-            default:
-                //self.action = .STOP
-                print("変更しない")
+            if self.charType == .POWER {
+                self.charTypePower(value: nextValue)
+            }else
+                if self.charType == .SPEED {
+                    self.charTypeSpeed(value: nextValue)
+                }
+                else{
+                    self.charTypeNomal(value: nextValue)
             }
         }
-        
-        
     }
     
-    func stateStop(){
+    func charTypePower(value:Int){
+        switch value{
+//        case 0:
+//            self.setStateStop()
+        case 4,5,6,7,8,9:
+            self.setStateThrow()
+        case 1,3:
+            self.setStateMoveLeft()
+        case 0,2:
+            self.setStateMoveRight()
+        default:
+            print("変更しない")
+        }
+   
+    }
+    
+    func charTypeSpeed(value:Int){
+        switch value{
+//        case 0:
+//            self.setStateStop()
+        case 0,9:
+            self.setStateThrow()
+        case 1,3,5,7:
+            self.setStateMoveLeft()
+        case 2,4,6,8:
+            self.setStateMoveRight()
+        default:
+            print("変更しない")
+        }
+
+    }
+    func charTypeNomal(value:Int){
+        switch value{
+//        case 0:
+//            self.setStateStop()
+        case 0,7,8,9:
+            self.setStateThrow()
+        case 1,3,5:
+            self.setStateMoveLeft()
+        case 2,4,6:
+            self.setStateMoveRight()
+        default:
+            print("変更しない")
+        }
+
+    }
+    
+    func setStateStop(){
         self.action = .STOP
         print("STOPにセット")
  
     }
     
-    func stateThrow(){
-        self.action = .BallThrow
+    func setStateThrow(){
+       
+        let val:UInt32 = 10
+        let nextValue = Int(arc4random_uniform(val))
+        
+        switch nextValue {
+        case 0,1,2,3,4,5,6:
+            self.action = .BallThrow
+        case 7,8,9:
+            self.action = .BallThrow_Big
+        default:
+            self.setStateStop()
+        }
         print("BallThrowにセット")
 
     }
     
-    func stateMoveLeft(){
+    func setStateMoveLeft(){
         self.action = .MoveToLeft
         print("MoveLeftにセット")
 
     }
-    func stateMoveRight(){
+    func setStateMoveRight(){
         self.action = .MoveToRight
         print("MoveRightにセット")
     }

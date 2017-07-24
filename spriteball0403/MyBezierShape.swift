@@ -9,7 +9,6 @@
 import UIKit
 import SpriteKit
 
-
 class MyBezierShape: UIBezierPath {
     
     struct Bezier4Points {
